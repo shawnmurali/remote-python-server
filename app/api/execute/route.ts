@@ -72,11 +72,13 @@ export async function POST(request: NextRequest) {
       console.log("[SERVER DEBUG] Container created, active sessions:", Array.from(containerSessions.keys()));
 
       // Send the code to the Python process with a delimiter
-      pythonProcess.stdin.write(code);
-      pythonProcess.stdin.write("\n__END_OF_CODE__\n");
-      // Don't close stdin - we need it for input later
+      if (pythonProcess.stdin) {
+        pythonProcess.stdin.write(code);
+        pythonProcess.stdin.write("\n__END_OF_CODE__\n");
+        // Don't close stdin - we need it for input later
+      }
 
-      pythonProcess.stdout.on("data", async (data) => {
+      pythonProcess.stdout?.on("data", async (data) => {
         const output = data.toString();
         const lines = output.split("\n").filter((line) => line.trim());
 
@@ -101,7 +103,7 @@ export async function POST(request: NextRequest) {
                 console.log("[SERVER DEBUG] Received input from client:", userInput);
                 
                 // Send the input back to the Python process
-                if (pythonProcess.stdin.writable) {
+                if (pythonProcess.stdin && pythonProcess.stdin.writable) {
                   pythonProcess.stdin.write(userInput + "\n");
                   console.log("[SERVER DEBUG] Sent input to Python process");
                 }
@@ -123,7 +125,7 @@ export async function POST(request: NextRequest) {
         }
       });
 
-      pythonProcess.stderr.on("data", async (data) => {
+      pythonProcess.stderr?.on("data", async (data) => {
         await sendMessage({ type: "error", content: data.toString() });
       });
 
