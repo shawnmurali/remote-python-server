@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Remote Python Server
 
-## Getting Started
+A Next.js fullstack application that provides an interactive Python code execution environment with a CodeMirror editor and console.
 
-First, run the development server:
+## Features
+
+- **CodeMirror Editor**: Syntax-highlighted Python code editor
+- **Interactive Console**: Real-time output display with input handling
+- **Custom I/O**: Overloaded `print()` and `input()` functions that communicate with the frontend
+- **Streaming Execution**: Code executes on the server with streaming output to the client
+
+## Prerequisites
+
+- Node.js (v18 or higher)
+- pnpm
+- Python 3
+
+## Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Install dependencies
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Running the Application
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Development mode
+pnpm dev
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Build for production
+pnpm build
 
-## Learn More
+# Run production server
+pnpm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+The application will be available at `http://localhost:3000`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## How It Works
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Frontend**: Built with Next.js and React, uses CodeMirror for code editing
+2. **API Route**: `/api/execute` spawns a Python process to execute code
+3. **Python Runner**: Custom Python script that:
+   - Overloads `print()` to send output to the frontend
+   - Overloads `input()` to request input from the frontend
+   - Communicates via JSON messages over stdout
+4. **Streaming**: Uses Server-Sent Events for real-time output streaming
+5. **Interactive Input**: When Python code calls `input()`, the frontend displays an input field
 
-## Deploy on Vercel
+## Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+Frontend (React/CodeMirror)
+    ↕ (HTTP POST with streaming)
+API Route (/api/execute)
+    ↕ (stdin/stdout)
+Python Runner (python-runner.py)
+    → Executes user code with custom I/O
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Example Code
+
+```python
+# Simple example
+print("Hello, World!")
+name = input("Enter your name: ")
+print(f"Hello, {name}!")
+
+# Loop example
+for i in range(3):
+    print(f"Count: {i}")
+```
+
+## Technical Details
+
+- **Session Management**: Each execution gets a unique session ID for managing I/O
+- **Input Handling**: Input requests create a promise that waits for user input via a separate API endpoint
+- **Error Handling**: Python exceptions are caught and displayed in the console
+- **Process Management**: Python processes are properly cleaned up after execution
+
+## License
+
+MIT
